@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DLG — Kick-off 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══ BASIS & VARIABLEN ══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03050b;--dark:#07101e;--panel:rgba(13,26,42,0.8);--card:rgba(18,32,48,0.7);
+  --c:#00d4f0;--g:#00e87a;--a:#f5a623;--r:#ff4466;--p:#a78bfa;
+  --w:#ffffff;--li:#c8e6f5;--mu:#7aadcc;--mu2:#2a4a62;
+}
+
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--w);
+  font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased; cursor:crosshair; perspective: 1000px;}
+
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9990;
+  background: radial-gradient(circle 800px at var(--mx, 50%) var(--my, 50%), rgba(0,212,240,0.08), transparent 100%);
+  mix-blend-mode: screen;
+}
+
+.scanlines { position: fixed; inset: 0; background: linear-gradient(to bottom, transparent, transparent 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; z-index: 9980; pointer-events: none; opacity: 0.4; }
+
+/* ══ HUD UNTEN RECHTS ══ */
+#telemetry { 
+  position: fixed; bottom: 75px; right: 30px; 
+  font-family: 'DM Mono'; font-size: 11px; color: var(--c); 
+  z-index: 9999; opacity: 0.9; pointer-events: none; line-height: 1.5; text-shadow: 0 0 5px rgba(0,212,240,0.5);
+  background: rgba(3,5,11,0.85); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(0,212,240,0.3);
+  backdrop-filter: blur(10px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-align: left;
+}
+.tel-val { color: var(--w); }
+
+#ambient-canvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:0.5; }
+
+/* ══ SLIDE SYSTEM ══ */
+#pbar{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--c),var(--g),var(--a));box-shadow:0 0 20px var(--c);transition:width .4s;z-index:99999}
+#deck{position:relative;width:100vw;height:100vh;z-index:2;}
+.slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .6s cubic-bezier(0.4,0,0.2,1),transform .6s cubic-bezier(0.4,0,0.2,1);transform:translateY(60px) scale(0.95);overflow:hidden}
+.slide.on{opacity:1;pointer-events:all;transform:translateY(0) scale(1)}
+.slide.out{opacity:0;transform:translateY(-60px) scale(1.05)}
+
+.sc{position:relative;z-index:2;width:100%;height:calc(100vh - 64px);display:flex;flex-direction:column}
+.sh{padding:40px 64px 0;flex-shrink:0}
+.sb{padding:20px 64px 40px;flex:1;display:flex;flex-direction:column;overflow-y:auto; -ms-overflow-style: none; scrollbar-width: none;}
+.sb::-webkit-scrollbar { display: none; }
+
+/* ══ UI ELEMENTS ══ */
+.card {
+  background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:24px 28px;
+  position:relative; overflow:hidden; backdrop-filter:blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.8); transform-style: preserve-3d; transition: transform 0.1s, border-color 0.3s ease;
+  display: flex; flex-direction: column;
+}
+.card:hover { border-color:rgba(0,212,240,0.5); box-shadow: 0 30px 60px rgba(0,0,0,0.9), 0 0 40px rgba(0,212,240,0.2); z-index: 50;}
+.card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:rgba(255,255,255,0.1); transform: translateZ(0); }
+.cc::before{background:var(--c);box-shadow:0 0 25px var(--c)}.cg::before{background:var(--g);box-shadow:0 0 25px var(--g)}
+.ca::before{background:var(--a);box-shadow:0 0 25px var(--a)}.cr::before{background:var(--r);box-shadow:0 0 25px var(--r)}
+.cp::before{background:var(--p);box-shadow:0 0 25px var(--p)}
+
+.card h3{font-family:'Bebas Neue';font-size:clamp(26px,3vw,38px);letter-spacing:2px;margin-bottom:16px;}
+.cc h3{color:var(--c)}.cg h3{color:var(--g)}.ca h3{color:var(--a)}.cr h3{color:var(--r)}.cp h3{color:var(--p)}
+
+.tag{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:5px;color:var(--mu);text-transform:uppercase;margin-bottom:8px;display:inline-block;background:rgba(122,173,204,0.1);padding:4px 10px;border-radius:4px;border:1px solid rgba(122,173,204,0.2); box-shadow: 0 0 10px rgba(122,173,204,0.2);}
+.title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,6.5vw,80px);letter-spacing:5px;line-height:.92;background:linear-gradient(90deg,var(--w),var(--c));-webkit-background-clip:text;color:transparent;}
+.rule{height:2px;margin-top:14px;background:linear-gradient(90deg,var(--c) 40%,transparent);position:relative}
+.num-xl{font-family:'Bebas Neue';font-size:clamp(42px,6vw,80px);line-height:1;display:inline-block; text-shadow: 0 10px 30px rgba(0,0,0,0.5);}
+.mono{font-family:'DM Mono',monospace}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;}
+.bl{display:flex;flex-direction:column;gap:14px;position:relative;z-index:2}
+.bi{display:flex;gap:16px;align-items:flex-start;font-size:clamp(14px,1.2vw,18px);color:var(--li);line-height:1.55;font-weight:300}
+.bi::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--c);flex-shrink:0;margin-top:8px;box-shadow:0 0 10px var(--c)}
+.bi.g::before{background:var(--g);box-shadow:0 0 10px var(--g)}.bi.a::before{background:var(--a);box-shadow:0 0 10px var(--a)}.bi.r::before{background:var(--r);box-shadow:0 0 10px var(--r)}
+
+.data-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 12px; overflow: hidden; transform: translateZ(20px); }
+.data-bar-fill { height: 100%; border-radius: 3px; box-shadow: 0 0 10px currentColor; }
+.data-hl { color: var(--w); font-family: 'DM Mono'; font-weight: bold; font-size: 1.1em; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; border-bottom: 1px solid rgba(255,255,255,0.3);}
+.pm-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono'; font-size: 11px; font-weight: bold; margin-right: 6px; }
+.pm-good { background: rgba(0,232,122,0.2); color: var(--g); border: 1px solid var(--g); }
+
+/* ══ NAV ══ */
+#nav{position:fixed;bottom:0;left:0;right:0;height:52px;z-index:99999;background:rgba(3,5,11,.9);border-top:1px solid rgba(0,212,240,.2);backdrop-filter:blur(30px);display:flex;align-items:center;padding:0 36px;gap:20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);}
+.nb{background:transparent;border:1px solid rgba(0,212,240,.3);color:var(--li);font-family:'DM Mono';font-size:12px;letter-spacing:2px;padding:8px 20px;border-radius:6px;cursor:pointer;transition:all .3s;text-transform:uppercase}
+.nb:hover:not(:disabled){border-color:var(--c);color:var(--w);background:rgba(0,212,240,.1);box-shadow:0 0 25px rgba(0,212,240,.4);}
+.nb:disabled{opacity:.15;cursor:not-allowed}
+.ndots{display:flex;gap:8px;flex:1;justify-content:center}
+.nd{width:8px;height:8px;border-radius:50%;background:var(--mu2);cursor:pointer;transition:all .4s;border:0}
+.nd:hover{background:rgba(0,212,240,0.8);transform:scale(1.8); box-shadow: 0 0 10px var(--c);}
+.nd.on{background:var(--c);width:30px;border-radius:4px;box-shadow:0 0 15px var(--c)}
+.ninfo{font-family:'DM Mono',monospace;font-size:12px;color:var(--c);min-width:60px;text-align:center; font-weight: bold; letter-spacing: 2px;}
+
+/* ══ SYSTEM OVERRIDE S3 ══ */
+#epi-warn { position: fixed; inset: 0; background: rgba(255,0,0,0.95); z-index: 9999999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(10px); }
+#epi-warn.show { opacity: 1; animation: strobe 0.15s infinite alternate; pointer-events: all; }
+@keyframes strobe { 0% { background: rgba(255,0,0,0.95); } 100% { background: rgba(180,0,0,1); } }
+#epi-warn h1 { font-family: 'Bebas Neue'; font-size: 15vw; color: #fff; letter-spacing: 10px; line-height: 1; text-shadow: 0 0 50px #fff; margin-bottom: 20px;}
+#epi-warn p { font-family: 'DM Mono'; font-size: 3vw; color: #000; background: #fff; padding: 10px 30px; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; }
+.override-active .slide:not(#s3) { display: none !important; }
+.override-bg { position:absolute; inset:0; background:rgba(255,0,0,0.2); z-index:9000; mix-blend-mode:color-burn; animation:glitch 0.1s infinite; pointer-events:none; opacity:0; transition:opacity 0.2s; }
+.override-active .override-bg { opacity: 1; }
+.override-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Bebas Neue'; font-size:160px; color:#ff4466; text-shadow:0 0 50px #ff4466, 0 0 100px #ff4466; z-index:9001; opacity:0; letter-spacing:15px; text-align:center; pointer-events:none; line-height: 0.9;}
+.override-active .override-text { animation: pop 0.2s forwards, glitch 0.05s infinite; opacity:1; }
+.hide-on-override { transition: opacity 0.1s, filter 0.1s; }
+.override-active .hide-on-override { opacity: 0 !important; filter:blur(20px) contrast(200%); transform:scale(1.2); }
+@keyframes glitch{ 0%{transform:translate(0);filter:hue-rotate(0deg)} 20%{transform:translate(-10px, 10px);filter:hue-rotate(90deg) invert(1)} 40%{transform:translate(-10px, -10px);filter:hue-rotate(180deg)} 60%{transform:translate(10px, 10px);filter:hue-rotate(270deg) invert(1)} 80%{transform:translate(10px, -10px);filter:hue-rotate(360deg)} 100%{transform:translate(0);filter:hue-rotate(0deg)} }
+
+/* ══ DRONE EASTER EGG ══ */
+#easter-egg { position: fixed; z-index: 100; pointer-events: none; opacity: 0; filter: drop-shadow(0 0 10px var(--c)); }
+.easter-fly-1 { animation: flyBy1 6s cubic-bezier(0.4, 0, 0.2, 1) forwards; opacity: 1 !important; }
+.easter-fly-2 { animation: flyBy2 8s linear forwards; opacity: 1 !important; }
+.easter-fly-3 { animation: flyBy3 5s ease-in-out forwards; opacity: 1 !important; }
+@keyframes flyBy1 { 0% { left: -100px; top: 80%; transform: rotate(10deg); } 50% { top: 30%; transform: rotate(-20deg) scale(1.5); } 100% { left: 110vw; top: 10%; transform: rotate(5deg); } }
+@keyframes flyBy2 { 0% { left: -100px; top: 10%; transform: rotate(0deg); } 40% { top: 40%; transform: rotate(360deg); } 60% { top: 40%; transform: rotate(720deg); } 100% { left: 110vw; top: 80%; transform: rotate(720deg); } }
+@keyframes flyBy3 { 0% { left: 110vw; top: 50%; transform: scaleX(-1) rotate(-10deg); } 50% { top: 80%; transform: scaleX(-1) rotate(10deg) scale(0.8); } 100% { left: -100px; top: 20%; transform: scaleX(-1) rotate(-20deg); } }
+
+/* ══ RISK STYLES S13 ══ */
+.risk-row{display:flex;align-items:center;gap:10px;padding:8px;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:6px;border:1px solid rgba(255,255,255,0.05); transition:all 0.3s;}
+.risk-row:hover{background:rgba(255,255,255,0.1);transform:translateX(5px);border-color:rgba(0,212,240,0.5);}
+.risk-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono';font-weight:700;color:#fff;flex-shrink:0}
+
+/* ══ TABELLE S14 ══ */
+.ct{width:100%;border-collapse:collapse; transform: translateZ(20px);}
+.ct th{font-family:'DM Mono',monospace;font-size:13px;color:var(--mu);padding:14px;background:rgba(0,0,0,0.6);border-bottom:2px solid rgba(0,212,240,.4);text-align:center;text-transform:uppercase}
+.ct th:first-child{text-align:left;width:280px}
+.ct td{padding:14px;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;text-align:center;color:var(--w)}
+.ct td:first-child{text-align:left;color:var(--li)}
+.ct tr.tot td{background:rgba(0,212,240,0.12)!important;font-family:'DM Mono',monospace;font-weight:700;font-size:22px;color:var(--c)!important;border-top:2px solid var(--c);}
+
+/* ══ KERN-ANIMATIONEN ══ */
+.slide.on .fu { animation:fadeUp .8s cubic-bezier(0.175, 0.885, 0.32, 1.2) var(--d,0s) both; }
+.slide.on .fw { animation:wipe 1.2s cubic-bezier(0.4,0,0.2,1) var(--d,0s) both; }
+.slide.on .fp { animation:pop .8s cubic-bezier(0.175, 0.885, 0.32, 1.3) var(--d,0s) both; }
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes pop{from{opacity:0;transform:scale(.7) translateY(40px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* ══ AMBIENT DRONE FLEET ══ */
+#drone-layer { position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; opacity:0.6; }
+.amb-drone { position:absolute; pointer-events:none; filter:drop-shadow(0 0 6px rgba(0,212,240,0.4)); }
+.amb-drone svg { width:100%; height:100%; }
+
+@keyframes droneCruise1 { 0%{left:-80px;top:12%;transform:rotate(-2deg) scale(0.7)} 25%{top:8%} 50%{top:15%;transform:rotate(3deg) scale(0.75)} 75%{top:10%} 100%{left:110vw;top:13%;transform:rotate(-1deg) scale(0.7)} }
+@keyframes droneCruise2 { 0%{right:-60px;top:25%;transform:scaleX(-1) rotate(1deg) scale(0.5)} 30%{top:22%} 60%{top:28%;transform:scaleX(-1) rotate(-2deg) scale(0.55)} 100%{right:110vw;top:24%;transform:scaleX(-1) rotate(1deg) scale(0.5)} }
+@keyframes droneCruise3 { 0%{left:-70px;top:75%;transform:rotate(4deg) scale(0.6)} 40%{top:70%;transform:rotate(-1deg) scale(0.65)} 100%{left:110vw;top:72%;transform:rotate(2deg) scale(0.6)} }
+@keyframes droneHover { 0%{transform:translateY(0)} 50%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
+@keyframes propSpin { 0%{opacity:0.3} 50%{opacity:0.8} 100%{opacity:0.3} }
+
+/* ══ CITY SILHOUETTE + LKW ══ */
+#city-layer { position:fixed; bottom:52px; left:0; right:0; height:120px; z-index:1; pointer-events:none; overflow:hidden; opacity:0.25; }
+#city-skyline { position:absolute; bottom:0; left:0; right:0; height:80px; }
+.lkw { position:absolute; bottom:0; pointer-events:none; }
+@keyframes lkwDrive { 0%{left:110vw} 100%{left:-200px} }
+@keyframes lkwDriveReverse { 0%{left:-200px} 100%{left:110vw} }
+
+/* ══ LIGHT STREAKS ══ */
+#streak-layer { position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; opacity:0.15; }
+.light-streak { position:absolute; height:1px; border-radius:1px; pointer-events:none; }
+@keyframes streakFly { 0%{left:-20%;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{left:120%;opacity:0} }
+
+/* ══ HEXGRID PULSE ══ */
+#hexgrid { position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.04; }
+
+/* ══ SLIDE TRANSITIONS ENHANCED ══ */
+.slide.on .card { animation: cardReveal 0.6s cubic-bezier(0.23, 1, 0.32, 1) var(--d, 0s) both; }
+@keyframes cardReveal { from{opacity:0;transform:translateY(30px) scale(0.96);filter:blur(4px)} to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)} }
+
+/* ══ GLOW PULSE ON NUMBERS ══ */
+.num-xl { animation: numGlow 3s ease-in-out infinite; }
+@keyframes numGlow { 0%,100%{text-shadow:0 10px 30px rgba(0,0,0,0.5)} 50%{text-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 40px currentColor} }
+</style>
+</head>
+<body>
+
+<div id="epi-warn">
+  <h1>WARNUNG: EPILEPSIE</h1>
+  <p>Extremer visueller Störeffekt folgt. Bitte wegsehen.</p>
+</div>
+
+<div id="telemetry">
+  <div style="color:var(--w); font-weight:bold; margin-bottom:4px; border-bottom:1px solid rgba(0,212,240,0.3); padding-bottom:2px;">SYS.MONITORING</div>
+  > GPS: <span class="tel-val" id="tel-gps">48.1328° N, 11.5972° E</span><br>
+  > UPLINK: <span class="tel-val" id="tel-ping">12ms</span><br>
+  > STATUS: <span class="tel-val" id="tts-label">READY</span>
+</div>
+
+<div class="scanlines"></div>
+<canvas id="ambient-canvas"></canvas>
+<div id="pbar"></div>
+
+<svg id="easter-egg" width="50" height="50" viewBox="0 0 64 64" fill="var(--c)"><path d="M58,24H50v4a2,2,0,0,1-4,0V24H42V18h4a2,2,0,0,1,2,2v2h2V20a6,6,0,0,0-12,0v4H26V20a6,6,0,0,0-12,0v2h2V20a2,2,0,0,1,2-2h4v6H14V24H6a2,2,0,0,0-2,2v4a2,2,0,0,0,2,2h4v2a10,10,0,0,0,20,0V32h8v2a10,10,0,0,0,20,0V32h4a2,2,0,0,0,2-2V26A2,2,0,0,0,58,24Zm-4,8a6,6,0,0,1-12,0V28h12ZM22,32a6,6,0,0,1-12,0V28H22ZM60,28H56V26h4ZM8,26H4v2H8ZM36,46H28a2,2,0,0,0-2,2v6h2V48h8v6h2V48A2,2,0,0,0,36,46Z"/></svg>
+
+<!-- ══ AMBIENT DRONE FLEET ══ -->
+<div id="drone-layer"></div>
+
+<!-- ══ LIGHT STREAKS ══ -->
+<div id="streak-layer"></div>
+
+<!-- ══ HEX GRID ══ -->
+<canvas id="hexgrid"></canvas>
+
+<!-- ══ CITY + LKW ══ -->
+<div id="city-layer">
+  <svg id="city-skyline" viewBox="0 0 1920 80" preserveAspectRatio="none" fill="rgba(0,212,240,0.15)">
+    <rect x="50" y="30" width="40" height="50"/><rect x="95" y="45" width="30" height="35"/>
+    <rect x="140" y="20" width="25" height="60"/><rect x="170" y="35" width="50" height="45"/>
+    <rect x="240" y="50" width="35" height="30"/><rect x="290" y="15" width="30" height="65"/>
+    <rect x="330" y="40" width="45" height="40"/><rect x="400" y="25" width="20" height="55"/>
+    <rect x="430" y="45" width="55" height="35"/><rect x="510" y="10" width="35" height="70"/>
+    <rect x="560" y="35" width="40" height="45"/><rect x="620" y="50" width="30" height="30"/>
+    <rect x="670" y="20" width="50" height="60"/><rect x="740" y="40" width="25" height="40"/>
+    <rect x="790" y="30" width="40" height="50"/><rect x="850" y="50" width="35" height="30"/>
+    <rect x="910" y="15" width="30" height="65"/><rect x="960" y="38" width="45" height="42"/>
+    <rect x="1030" y="22" width="35" height="58"/><rect x="1080" y="45" width="50" height="35"/>
+    <rect x="1150" y="30" width="25" height="50"/><rect x="1200" y="50" width="40" height="30"/>
+    <rect x="1260" y="18" width="30" height="62"/><rect x="1310" y="42" width="55" height="38"/>
+    <rect x="1390" y="28" width="35" height="52"/><rect x="1450" y="48" width="40" height="32"/>
+    <rect x="1510" y="12" width="30" height="68"/><rect x="1560" y="35" width="50" height="45"/>
+    <rect x="1640" y="50" width="25" height="30"/><rect x="1690" y="25" width="40" height="55"/>
+    <rect x="1760" y="40" width="35" height="40"/><rect x="1820" y="30" width="50" height="50"/>
+  </svg>
+</div>
+
+<div id="deck">
+
+<div class="slide on" id="s0">
+  <div style="position:absolute; inset:0; z-index:0; background:radial-gradient(ellipse at 30% 40%, rgba(0,50,80,0.6) 0%, transparent 60%), radial-gradient(ellipse at 70% 70%, rgba(0,100,120,0.3) 0%, transparent 50%), var(--bg);"></div>
+  <div class="sc" style="justify-content:center; align-items:center; z-index:2; position:relative;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:30px; width:100%; max-width:1100px;">
+      <div class="fu" style="font-family:'DM Mono'; font-size:13px; color:var(--c); letter-spacing:8px; text-transform:uppercase; --d:.1s; opacity:0.8;">DLG · Drohnen Lieferungsgesellschaft</div>
+      <div style="width:100%; max-width:960px; aspect-ratio:16/9; border-radius:16px; overflow:hidden; border:2px solid rgba(0,212,240,0.3); box-shadow:0 0 80px rgba(0,212,240,0.15), 0 30px 60px rgba(0,0,0,0.8); position:relative;" class="fu" id="synthesia-wrap">
+        <iframe src="https://share.synthesia.io/embeds/videos/c6e1ef9a-3116-4231-b3dd-3352793bb5dc" loading="lazy" title="Synthesia video player - Dein KI-Video" allowfullscreen allow="encrypted-media; fullscreen; microphone;" style="position:absolute; width:100%; height:100%; top:0; left:0; border:none;"></iframe>
+      </div>
+      <div class="fu" style="--d:.4s; display:flex; align-items:center; gap:16px; margin-top:10px;">
+        <div style="height:1px; width:60px; background:linear-gradient(90deg, transparent, var(--c));"></div>
+        <div style="font-family:'DM Mono'; font-size:12px; color:var(--mu); letter-spacing:4px; text-transform:uppercase;">Präsentiert von Synthesia AI</div>
+        <div style="height:1px; width:60px; background:linear-gradient(90deg, var(--c), transparent);"></div>
+      </div>
+      <div class="fu" style="--d:.6s; font-family:'DM Mono'; font-size:11px; color:var(--mu2); letter-spacing:3px; margin-top:10px;">▶ VIDEO STARTEN · DANN WEITER MIT →</div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s1">
+  <div style="position:absolute; inset:0; z-index:1; overflow:hidden;">
+    <video autoplay loop muted playsinline crossorigin="anonymous" style="position:absolute; top:50%; left:50%; min-width:100%; min-height:100%; width:auto; height:auto; transform:translate(-50%, -50%); object-fit:cover; opacity:0.35; pointer-events:none;">
+      <source src="video/intro.mp4" type="video/mp4">
+      <source src="https://cdn.pixabay.com/video/2020/02/21/32626-393275038_large.mp4" type="video/mp4">
+      <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4">
+    </video>
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at center, rgba(3,5,11,0.2) 0%, rgba(3,5,11,0.95) 100%); pointer-events:none;"></div>
+  </div>
+  
+  <div class="sc" style="justify-content:center; align-items:center; text-align:center; z-index:3; position:relative;">
+    <div class="fu" style="font-family:'DM Mono'; font-size:20px; color:var(--c); letter-spacing:14px; margin-bottom:20px; text-transform:uppercase; --d:.2s; background:rgba(3,5,11,0.6); padding:10px 24px; border-radius:30px; border:1px solid rgba(0,212,240,0.4); backdrop-filter:blur(8px); display:inline-block;">Projekt München-Ost</div>
+    <div class="fu title" style="font-size:clamp(140px, 18vw, 280px); letter-spacing:24px; --d:.3s; padding:20px 0; text-shadow: 0 10px 40px rgba(0,0,0,0.9);">DLG</div>
+    <div class="fu" style="font-family:'DM Mono'; font-size:22px; color:var(--mu); letter-spacing:10px; margin-top:10px; --d:.4s; background:rgba(3,5,11,0.6); padding:8px 20px; border-radius:12px; backdrop-filter:blur(8px); text-shadow: 0 0 10px rgba(122,173,204,0.5); display:inline-block;">DROHNEN LIEFERUNGSGESELLSCHAFT</div>
+  </div>
+</div>
+
+<div class="slide" id="s2">
+  <div class="sc">
+    <div class="sh"><div class="tag fu" style="--d:.05s">KICK-OFF · 17. MÄRZ 2026</div><div class="title fu" style="--d:.1s;">Die Fakten</div><div class="rule fw" style="--d:.2s"></div></div>
+    <div class="sb" style="--d:.3s; justify-content:center; align-items:center;">
+      <div class="g3" style="max-width:1200px">
+        <div class="card ca fu" style="text-align:center;padding:50px 30px">
+          <div class="num-xl count" data-val="480" data-suffix="K€" style="color:var(--a)">0</div>
+          <div class="mono" style="font-size:18px;color:var(--w);letter-spacing:4px;margin-top:20px">PILOTBUDGET</div>
+          <div style="font-size:16px;color:var(--li);margin-top:12px"><span class="pm-badge pm-good">CPI: 1.12</span> <span class="pm-badge pm-good">SPI: 1.05</span></div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 100%; background: var(--a); color: var(--a)"></div></div>
+          <div class="mono" style="font-size:12px;color:var(--mu);margin-top:12px; line-height: 1.8;">
+            IRR: <span class="data-hl">42%</span> | NPV: <span class="data-hl">3.4M €</span><br>
+            ROI: <span class="data-hl">8 Monate</span> | Burn Rate: <span class="data-hl">14k/Woche</span>
+          </div>
+        </div>
+        <div class="card cc fu" style="text-align:center;padding:50px 30px;--d:.4s">
+          <div class="num-xl count" data-val="5000" style="color:var(--c)">0</div>
+          <div class="mono" style="font-size:18px;color:var(--w);letter-spacing:4px;margin-top:20px">DROHNEN ZIEL</div>
+          <div style="font-size:16px;color:var(--li);margin-top:12px">Flotte im Vollbetrieb 2028</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 12%; background: var(--c); color: var(--c)"></div></div>
+          <div class="mono" style="font-size:12px;color:var(--mu);margin-top:12px; line-height: 1.8;">
+            PILOT-SCALE: <span class="data-hl">60/5000 (1.2%)</span><br>
+            ZULASSUNG: <span class="data-hl">EASA C2</span> | MTBF: <span class="data-hl">4500h</span>
+          </div>
+        </div>
+        <div class="card cg fu" style="text-align:center;padding:50px 30px;--d:.5s">
+          <div class="num-xl count" data-val="8.2" data-suffix=" MIN" style="color:var(--g)">0</div>
+          <div class="mono" style="font-size:18px;color:var(--w);letter-spacing:4px;margin-top:20px">Ø LIEFERZEIT</div>
+          <div style="font-size:16px;color:var(--li);margin-top:12px">Getestet im 5km Radius</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 82%; background: var(--g); color: var(--g)"></div></div>
+          <div class="mono" style="font-size:12px;color:var(--mu);margin-top:12px; line-height: 1.8;">
+            EFFIZIENZ-GAIN: <span class="data-hl">+415%</span><br>
+            PRÄZISION: <span class="data-hl">30cm (UWB Beacon)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s3">
+  <div class="override-bg"></div>
+  <div class="override-text">SYSTEM OVERRIDE<br><span style="font-size:60px;color:#fff;font-family:'DM Mono';letter-spacing:8px;text-shadow: 0 0 20px #fff;">AI CONTROL ENGAGED</span></div>
+  
+  <div class="sc hide-on-override">
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0">
+      <div style="padding:40px 80px;border-right:1px solid rgba(0,212,240,.2);display:flex;flex-direction:column;justify-content:center">
+        <div class="fu title" style="font-size:64px;letter-spacing:4px;color:var(--c);margin-bottom:40px;--d:.05s">DLG Leadership</div>
+        <div style="display:flex;flex-direction:column;gap:30px">
+          <div class="fu card" style="padding:24px;--d:.1s;background:rgba(0,0,0,0.6);border-color:var(--c);box-shadow:inset 0 0 30px rgba(0,212,240,0.2)"><div style="font-size:32px;font-weight:600;color:var(--w)">Dr. Markus Bauer</div><div class="mono" style="font-size:16px;color:var(--c);margin-top:6px;letter-spacing:2px">PROJEKTLEITER</div></div>
+          <div class="fu" style="--d:.18s;padding-left:24px;border-left:4px solid var(--c)"><div style="font-size:28px;color:var(--w)">Lisa Meyer</div><div class="mono" style="font-size:16px;color:var(--mu);margin-top:6px">Drohnentechnik</div></div>
+          <div class="fu" style="--d:.25s;padding-left:24px;border-left:4px solid var(--c)"><div style="font-size:28px;color:var(--w)">Tom Krause</div><div class="mono" style="font-size:16px;color:var(--mu);margin-top:6px">Backend & AWS</div></div>
+        </div>
+      </div>
+      <div style="padding:40px 80px;display:flex;flex-direction:column;justify-content:center">
+        <div class="fu title" style="font-size:130px;letter-spacing:8px;margin-bottom:30px;--d:.12s;">KICK-OFF<br>2026</div>
+        <div class="fw" style="height:6px;background:linear-gradient(90deg,var(--c),transparent);margin-bottom:50px;--d:.28s"></div>
+        <div class="fu card cc" style="display:flex;flex-direction:column;gap:24px;padding:40px;--d:.38s">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-size:18px;color:var(--mu);letter-spacing:2px">GO-LIVE</span><span style="font-size:32px;font-weight:700;color:var(--c)">15. Jun 2026</span></div>
+          <div style="height:2px;background:rgba(255,255,255,0.1)"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-size:18px;color:var(--mu);letter-spacing:2px">Antrieb</span><span style="font-size:32px;font-weight:700;color:var(--g)">100% Solar</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s4">
+  <div class="sc"><div class="sh"><div class="tag fu">Überblick & Struktur</div><div class="title fu">Agenda</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center;">
+      <div class="card" style="padding:60px; max-width:1300px; margin:0 auto; width:100%; background:rgba(18,32,48,0.5)">
+        <div class="g2" style="gap:60px">
+          <div class="bl" style="gap:24px">
+            <div class="fu card cc" style="--d:.1s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--c);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">01</span><div><div style="font-size:24px;font-weight:bold">Hintergründe</div><div class="mono" style="font-size:13px;color:var(--mu)">Marktanalyse & Verkehrskollaps München</div></div></div>
+            <div class="fu card cg" style="--d:.2s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--g);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">02</span><div><div style="font-size:24px;font-weight:bold">Stakeholder</div><div class="mono" style="font-size:13px;color:var(--mu)">Interessenkonflikte & Regulatorik (EASA)</div></div></div>
+            <div class="fu card ca" style="--d:.3s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--a);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">03</span><div><div style="font-size:24px;font-weight:bold">Projektziele</div><div class="mono" style="font-size:13px;color:var(--mu)">Magisches Dreieck: Zeit, Kosten, Qualität</div></div></div>
+            <div class="fu card cp" style="--d:.4s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--p);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">04</span><div><div style="font-size:24px;font-weight:bold">Roadmap & Ablauf</div><div class="mono" style="font-size:13px;color:var(--mu)">Meilenstein-Trendanalyse bis Go-Live</div></div></div>
+          </div>
+          <div class="bl" style="gap:24px">
+            <div class="fu card cr" style="--d:.5s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--r);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">05</span><div><div style="font-size:24px;font-weight:bold">Risikoanalyse</div><div class="mono" style="font-size:13px;color:var(--mu)">Expected Monetary Value (EMV) & Mitigation</div></div></div>
+            <div class="fu card cc" style="--d:.6s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--c);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">06</span><div><div style="font-size:24px;font-weight:bold">Kostenplanung</div><div class="mono" style="font-size:13px;color:var(--mu)">Earned Value Management & Budget-Burn</div></div></div>
+            <div class="fu card cg" style="--d:.7s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--g);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">07</span><div><div style="font-size:24px;font-weight:bold">Team</div><div class="mono" style="font-size:13px;color:var(--mu)">Ressourcen-Allokation & SPOF-Identifikation</div></div></div>
+            <div class="fu card ca" style="--d:.8s;display:flex; flex-direction:row; align-items:center;padding:20px"><span style="color:var(--a);margin-right:24px;font-family:'Bebas Neue';font-size:40px;width:40px">08</span><div><div style="font-size:24px;font-weight:bold">Wirtschaftlichkeit</div><div class="mono" style="font-size:13px;color:var(--mu)">Unit Economics, CAC, CLTV & Break-Even</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s5">
+  <div class="sc"><div class="sh"><div class="tag fu">Logistik Metriken (München Stadtgebiet)</div><div class="title fu">Warum DLG?</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div class="g2" style="max-width:1300px; margin:0 auto;">
+        <div class="card cr fu" style="--d:.2s; padding:50px">
+          <h3 style="font-size:48px; position:relative; z-index:2; margin-top:20px;">Heute: LKW</h3>
+          <div class="num-xl count" data-val="34" data-suffix=" Min" style="color:var(--r); margin:20px 0;">0</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 100%; background: var(--r); color: var(--r)"></div></div>
+          <div class="bl" style="margin-top:30px">
+            <div class="bi r">Ø Geschwindigkeit München: <span class="data-hl">14 km/h</span></div>
+            <div class="bi r">Durchschnittlicher Ausstoß: <span class="data-hl">245g CO₂/km</span></div>
+            <div class="bi r">Personal- & Parkplatzkosten erzeugen Defizit</div>
+          </div>
+        </div>
+        <div class="card cg fu" style="--d:.4s; padding:50px;">
+          <h3 style="font-size:48px; position:relative; z-index:2; margin-top:20px;">Morgen: DLG</h3>
+          <div class="num-xl count" data-val="8.2" data-suffix=" Min" style="color:var(--g); margin:20px 0;">0</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 24%; background: var(--g); color: var(--g)"></div></div>
+          <div class="bl" style="margin-top:30px">
+            <div class="bi g">Marschgeschwindigkeit: <span class="data-hl">65 km/h</span> (Luftlinie)</div>
+            <div class="bi g">Emission lokal: <span class="data-hl">0g CO₂</span> (Verbrauch: 12 Wh/km)</div>
+            <div class="bi g">Vollautonome letzte Meile (Grenzkosten fast 0)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s6">
+  <div class="sc"><div class="sh"><div class="tag fu">Hardware-Spezifikationen</div><div class="title fu">Produkte & Tech-Stack</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center;">
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="card cc fu" style="--d:.1s; flex-direction:row; justify-content:space-between; align-items:center; padding: 24px 32px">
+          <div><div style="font-family:'Bebas Neue';font-size:36px;color:var(--c);letter-spacing:2px">Daily Drone <span style="font-size:18px;font-family:'DM Sans';color:var(--w);letter-spacing:0;font-weight:400">(Standard)</span></div><div class="mono" style="color:var(--mu);margin-top:6px;font-size:14px">Akku: 4500 mAh Li-Po · Motor: 800W Peak</div></div>
+          <div style="text-align:right"><div style="font-size:16px;color:var(--li)"><span class="data-hl">2,5 kg</span> Traglast · <span class="data-hl">6 km</span> Reichweite · MTBF: <span class="data-hl">4500h</span></div><div class="num-xl" style="font-size:36px;color:var(--c);margin-top:6px">4.200 €</div></div>
+        </div>
+        <div class="card cg fu" style="--d:.2s; flex-direction:row; justify-content:space-between; align-items:center; padding: 24px 32px">
+          <div><div style="font-family:'Bebas Neue';font-size:36px;color:var(--g);letter-spacing:2px">DRONE PRO <span style="font-size:18px;font-family:'DM Sans';color:var(--w);letter-spacing:0;font-weight:400">(Schwerlast)</span></div><div class="mono" style="color:var(--mu);margin-top:6px;font-size:14px">Verstärkte Rotoren · Erweiterte Payload-Bay</div></div>
+          <div style="text-align:right"><div style="font-size:16px;color:var(--li)"><span class="data-hl">3,5 kg</span> Traglast · <span class="data-hl">8 km</span> Reichweite · MTBF: <span class="data-hl">4200h</span></div><div class="num-xl" style="font-size:36px;color:var(--g);margin-top:6px">6.800 €</div></div>
+        </div>
+        <div class="card cp fu" style="--d:.3s; flex-direction:row; justify-content:space-between; align-items:center; padding: 24px 32px">
+          <div><div style="font-family:'Bebas Neue';font-size:36px;color:var(--p);letter-spacing:2px">Dragonfly <span style="font-size:18px;font-family:'DM Sans';color:var(--w);letter-spacing:0;font-weight:400">(Medizin & Eil)</span></div><div class="mono" style="color:var(--mu);margin-top:6px;font-size:14px">Low-Drag Aerodynamik · Silent-Drive (48 dB)</div></div>
+          <div style="text-align:right"><div style="font-size:16px;color:var(--li)"><span class="data-hl">1,2 kg</span> Traglast · <span class="data-hl">12 km</span> Reichweite · Max: <span class="data-hl">85 km/h</span></div><div class="num-xl" style="font-size:36px;color:var(--p);margin-top:6px">11.500 €</div></div>
+        </div>
+        <div class="card ca fu" style="--d:.4s; flex-direction:row; justify-content:space-between; align-items:center; background:rgba(245,166,35,0.08); padding: 24px 32px">
+          <div><div style="font-family:'Bebas Neue';font-size:36px;color:var(--a);letter-spacing:2px">GPS Bluetooth Beacon</div><div class="mono" style="color:var(--mu);margin-top:6px;font-size:14px">Herzstück des Systems · Ziel-Matte für Endkunden</div></div>
+          <div style="text-align:right"><div style="font-size:16px;color:var(--li)">Zentimetergenaue <span class="data-hl">UWB Präzision</span></div><div class="num-xl" style="font-size:36px;color:var(--a);margin-top:6px">20 €</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s7">
+  <div class="sc"><div class="sh"><div class="tag fu">Netzwerk & Matrix</div><div class="title fu">6 Stakeholder-Cluster</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center; align-items:center;">
+      <div class="g3" style="max-width:1300px;">
+        <div class="card fu" style="--d:.1s; border-top:4px solid var(--c); text-align:center">
+          <div class="mono" style="font-size:12px;color:var(--mu);letter-spacing:3px">AUFTRAGGEBER</div>
+          <h3 style="color:var(--w);margin:10px 0;font-size:28px">DLG Board</h3>
+          <div style="font-size:13px; color:var(--li); margin-bottom:10px">Einfluss: Hoch | Interesse: Hoch</div>
+          <div class="bi c" style="justify-content:center; background:rgba(0,212,240,0.1); padding:6px; border-radius:4px">Manage Closely</div>
+        </div>
+        <div class="card fu" style="--d:.2s; border-top:4px solid var(--r); text-align:center">
+          <div class="mono" style="font-size:12px;color:var(--mu);letter-spacing:3px">REGULIERUNG</div>
+          <h3 style="color:var(--w);margin:10px 0;font-size:28px">EASA / LBA</h3>
+          <div style="font-size:13px; color:var(--li); margin-bottom:10px">Einfluss: Extrem | Interesse: Mittel</div>
+          <div class="bi r" style="justify-content:center; background:rgba(255,68,102,0.1); padding:6px; border-radius:4px">UAS-Klasse C2 Zert.</div>
+        </div>
+        <div class="card fu" style="--d:.3s; border-top:4px solid var(--a); text-align:center">
+          <div class="mono" style="font-size:12px;color:var(--mu);letter-spacing:3px">B2B-PARTNER</div>
+          <h3 style="color:var(--w);margin:10px 0;font-size:28px">Amazon, DM...</h3>
+          <div style="font-size:13px; color:var(--li); margin-bottom:10px">Einfluss: Mittel | Interesse: Hoch</div>
+          <div class="bi a" style="justify-content:center; background:rgba(245,166,35,0.1); padding:6px; border-radius:4px">Keep Satisfied</div>
+        </div>
+        <div class="card fu" style="--d:.4s; border-top:4px solid var(--w); text-align:center">
+          <div class="mono" style="font-size:12px;color:var(--mu);letter-spacing:3px">INTERN</div>
+          <h3 style="color:var(--w);margin:10px 0;font-size:28px">Projektteam</h3>
+          <div style="font-size:13px; color:var(--li); margin-bottom:10px">Einfluss: Hoch | Interesse: Hoch</div>
+          <div class="bi" style="justify-content:center;--c:var(--w); background:rgba(255,255,255,0.1); padding:6px; border-radius:4px">Agile / 6 Key-Player</div>
+        </div>
+        <div class="card fu" style="--d:.5s; border-top:4px solid var(--g); text-align:center">
+          <div class="mono" style="font-size:12px;color:var(--mu);letter-spacing:3px">ZIELGRUPPE</div>
+          <h3 style="color:var(--w);margin:10px 0;font-size:28px">Anwohner</h3>
+          <div style="font-size:13px; color:var(--li); margin-bottom:10px">Einfluss: Niedrig | Interesse: Hoch</div>
+          <div class="bi g" style="justify-content:center; background:rgba(0,232,122,0.1); padding:6px; border-radius:4px">Infoabend 22.04.</div>
+        </div>
+        <div class="card fu" style="--d:.6s; border-top:4px solid var(--p); text-align:center">
+          <div class="mono" style="font-size:12px;color:var(--mu);letter-spacing:3px">ZULIEFERER</div>
+          <h3 style="color:var(--w);margin:10px 0;font-size:28px">Tech-Vendors</h3>
+          <div style="font-size:13px; color:var(--li); margin-bottom:10px">Einfluss: Mittel | Interesse: Mittel</div>
+          <div class="bi" style="justify-content:center;--c:var(--p); background:rgba(167,139,250,0.1); padding:6px; border-radius:4px">Monitor (Akkus & APIs)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s8">
+  <div class="sc">
+    <div class="sh"><div class="tag fu">Die harten Fakten</div><div class="title fu">Projektnutzen</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div class="g3" style="margin-bottom:40px">
+        <div class="card cg fu" style="--d:.1s;text-align:center;padding:40px 20px;">
+          <div class="num-xl count" data-val="-76" data-suffix="%" style="color:var(--g)">0</div>
+          <div class="mono" style="font-size:18px;color:var(--w);letter-spacing:4px;margin-top:20px;width:100%;">LIEFERZEIT</div>
+          <div style="font-size:16px;color:var(--li);margin-top:12px;width:100%;"><span class="data-hl">8,2 Min</span> statt 34,0 Min</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 76%; background: var(--g); color: var(--g)"></div></div>
+        </div>
+        <div class="card cc fu" style="--d:.2s;text-align:center;padding:40px 20px;transform:scale(1.08) translateZ(30px);box-shadow:0 20px 60px rgba(0,212,240,0.2)">
+          <div class="num-xl count" data-val="-97" data-suffix="%" style="color:var(--c)">0</div>
+          <div class="mono" style="font-size:18px;color:var(--w);letter-spacing:4px;margin-top:20px;width:100%;">CO₂-AUSSTOSS</div>
+          <div style="font-size:16px;color:var(--li);margin-top:12px;width:100%;"><span class="data-hl">0g</span> statt 245g pro km</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 97%; background: var(--c); color: var(--c)"></div></div>
+        </div>
+        <div class="card ca fu" style="--d:.3s;text-align:center;padding:40px 20px;">
+          <div class="num-xl count" data-val="-84" data-suffix="%" style="color:var(--a)">0</div>
+          <div class="mono" style="font-size:18px;color:var(--w);letter-spacing:4px;margin-top:20px;width:100%;">KOSTEN / STOP</div>
+          <div style="font-size:16px;color:var(--li);margin-top:12px;width:100%;"><span class="data-hl">0,38 €</span> statt 2,85 € (LKW)</div>
+          <div class="data-bar-bg"><div class="data-bar-fill" style="width: 84%; background: var(--a); color: var(--a)"></div></div>
+        </div>
+      </div>
+      <div class="card fu" style="--d:.5s;text-align:center;background:rgba(0,0,0,0.6); border-color: var(--c)">
+        <div class="body" style="font-size:24px;max-width:1000px;margin:0 auto; font-style: italic;">"Wir senken die Grenzkosten der letzten Meile nahe Null."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s9">
+  <div class="sc">
+    <div class="sh"><div class="tag fu">Fokus bewahren</div><div class="title fu">Projektumfang</div><div class="rule fw" style="background:linear-gradient(90deg,var(--g) 40%,transparent);"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div style="display:grid; grid-template-columns: 1fr 200px 1fr; gap:20px; max-width:1400px; margin:0 auto; width:100%; align-items:center;">
+        <div class="card cg fu" style="--d:.1s; padding:40px">
+          <h3 style="font-size:38px; color:var(--g); margin-bottom: 20px; border-bottom: 2px solid rgba(0,232,122,0.2); padding-bottom:10px;">In Scope</h3>
+          <div class="bl" style="gap:20px">
+            <div class="bi g">Beschaffung & Kalibrierung (60 Drohnen)</div>
+            <div class="bi g">Programmierung KI-Routing & App-Frontend</div>
+            <div class="bi g">EASA Zulassungsprozess (Klasse C2)</div>
+            <div class="bi g">GPS/Bluetooth-Beacon Infrastruktur</div>
+            <div class="bi g">100% Solarbetrieb der Lade-Hubs</div>
+          </div>
+        </div>
+        <div class="fu" style="text-align:center; --d:.2s;">
+          <div style="width:2px; height:80px; background:rgba(255,255,255,0.2); margin:0 auto;"></div>
+          <div style="border:1px solid rgba(255,255,255,0.2); background:var(--bg); border-radius:30px; padding:10px 20px; margin: 10px 0; font-family:'DM Mono'; font-size:12px; color:var(--li);">PROJEKT-<br>GRENZE</div>
+          <div style="width:2px; height:80px; background:rgba(255,255,255,0.2); margin:0 auto;"></div>
+        </div>
+        <div class="card cr fu" style="--d:.3s; padding:40px">
+          <h3 style="font-size:38px; color:var(--r); margin-bottom: 20px; border-bottom: 2px solid rgba(255,68,102,0.2); padding-bottom:10px;">Out of Scope</h3>
+          <div class="bl" style="gap:20px">
+            <div class="bi r">Eigener stationärer Handel / Lagerverkauf</div>
+            <div class="bi r">Gefahrguttransport (Chemikalien etc.)</div>
+            <div class="bi r">Lieferungen über 3,5 kg Gesamtgewicht</div>
+            <div class="bi r">Ländlicher Raum (Fokus rein urban)</div>
+            <div class="bi r">Wartungsverträge nach 2028 (Phase 2)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s10">
+  <div class="sc"><div class="sh"><div class="tag fu">Pilotphase 2026</div><div class="title fu">Drei Projektziele</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center"><div class="g3">
+      <div class="card cc fu" style="--d:.1s">
+        <h3 style="display:flex;align-items:center;gap:16px"><span style="font-size:60px;color:var(--c);opacity:0.4">1</span> Sachziel</h3>
+        <div class="bl" style="margin-top:16px; gap:16px"><div class="bi c">SLA Uptime System: <span class="data-hl">99.8%</span></div><div class="bi c">Lieferzeit < 10 Min</div><div class="bi c">App-Beta mit 200 Testern</div><div class="bi c">Fehlerrate Landung < 0.1%</div></div>
+        <div style="margin-top:auto;background:rgba(0,212,240,.1);padding:14px;border-radius:8px;font-family:'DM Mono';font-size:14px;color:var(--c); border: 1px solid rgba(0,212,240,0.3)">✓ AKTUELL: <span class="data-hl">8,2 MIN</span> (ÜBERERFÜLLT)</div>
+      </div>
+      <div class="card ca fu" style="--d:.2s">
+        <h3 style="display:flex;align-items:center;gap:16px"><span style="font-size:60px;color:var(--a);opacity:0.4">2</span> Kostenziel</h3>
+        <div class="bl" style="margin-top:16px; gap:16px"><div class="bi a">Pilotbudget max. 480.000 €</div><div class="bi a">Var. Kosten < 0,38 € / Drop</div><div class="bi a">CAC < 2,10 € (Cust. Acq. Cost)</div><div class="bi a">CLTV > 120,00 € Projektion</div></div>
+        <div style="margin-top:auto;background:rgba(245,166,35,.1);padding:14px;border-radius:8px;font-family:'DM Mono';font-size:14px;color:var(--a); border: 1px solid rgba(245,166,35,0.3)">✓ AKTUELL: <span class="data-hl">35.000 €</span> UNTER PLAN</div>
+      </div>
+      <div class="card cg fu" style="--d:.3s">
+        <h3 style="display:flex;align-items:center;gap:16px"><span style="font-size:60px;color:var(--g);opacity:0.4">3</span> Terminziel</h3>
+        <div class="bl" style="margin-top:16px; gap:16px"><div class="bi g">EASA Zulassung: 14. April</div><div class="bi g">Pilot-Test: Mai 2026</div><div class="bi g">Offizieller Go-Live: 15. Juni</div></div>
+        <div style="margin-top:auto;background:rgba(0,232,122,.1);padding:14px;border-radius:8px;font-family:'DM Mono';font-size:14px;color:var(--g); border: 1px solid rgba(0,232,122,0.3)">▶ AKTUELL: <span class="data-hl">SPI 1.05</span> (ON TRACK)</div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="slide" id="s11">
+  <div class="sc">
+    <div class="sh"><div class="title fu">Roadmap 2026</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div class="card fu" style="padding:60px 20px; --d:.2s; max-width: 1400px; margin:0 auto; width:100%;">
+        <div style="position:relative; padding-top:40px;">
+          <div style="position:absolute; top: 60px; left: 10%; width: 80%; height: 6px; background: rgba(255,255,255,0.05); border-radius:3px; z-index:1;"></div>
+          <div class="fw" style="position:absolute; top: 60px; left: 10%; width: 80%; height: 6px; background: linear-gradient(90deg, var(--r) 0%, var(--a) 33%, var(--c) 66%, var(--g) 100%); box-shadow: 0 0 15px var(--c); z-index:2; border-radius:3px; --d:0.8s;"></div>
+          
+          <div style="display:flex; justify-content:space-between; position:relative; z-index:3;">
+            <div class="fp" style="text-align:center; width:20%; --d:0.8s;">
+              <span style="font-size:20px; color:var(--r)">🚛 LKW</span>
+              <div style="width:20px; height:20px; background:var(--r); border-radius:50%; margin:13px auto; box-shadow: 0 0 10px var(--r), inset 0 0 5px #fff;"></div>
+              <div class="mono" style="margin-top:20px;">JANUAR<br>Ist-Zustand</div>
+            </div>
+            <div class="fp" style="text-align:center; width:20%; --d:1.1s;">
+              <span style="font-size:20px; color:var(--a)">🚛</span>
+              <div style="width:20px; height:20px; background:var(--a); border-radius:50%; margin:13px auto; box-shadow: 0 0 10px var(--a), inset 0 0 5px #fff;"></div>
+              <div class="mono" style="margin-top:20px;">MÄRZ<br>Pilot-Setup</div>
+            </div>
+            <div class="fp" style="text-align:center; width:20%; --d:1.4s;">
+              <span style="font-size:24px; color:var(--c)">🛸</span>
+              <div style="width:20px; height:20px; background:var(--c); border-radius:50%; margin:9px auto; box-shadow: 0 0 15px var(--c), inset 0 0 5px #fff;"></div>
+              <div class="mono" style="margin-top:20px;">MAI<br>Erster Flug</div>
+            </div>
+            <div class="fp" style="text-align:center; width:20%; transform:scale(1.2); --d:1.7s;">
+              <span style="font-size:32px; color:var(--g)">🛸 DROHNE</span>
+              <div style="width:24px; height:24px; background:var(--g); border-radius:50%; margin:2px auto 13px; box-shadow: 0 0 25px var(--g), inset 0 0 10px #fff; border:3px solid var(--bg);"></div>
+              <div class="mono" style="color:var(--w); font-weight:bold;">15. JUNI<br>GO-LIVE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s12">
+  <div class="sc"><div class="sh"><div class="title fu">Projektablauf</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center"><div class="g4">
+      <div class="card fu" style="--d:.1s;border-top:6px solid var(--mu);padding:36px">
+        <h3 style="font-size:36px;color:var(--w);margin-bottom:8px">Phase 0</h3><div style="font-family:'DM Mono';font-size:16px;color:var(--mu);margin-bottom:24px;letter-spacing:3px">VORBEREITUNG</div>
+        <div class="bl"><div class="bi">Rechtliche Hürden klären (EASA)</div><div class="bi">Partnerakquise (Alle 7 Partner an Bord)</div></div>
+        <div style="margin-top:auto;color:var(--c);font-family:'DM Mono';font-size:14px;background:rgba(0,212,240,0.1);padding:10px 16px;border-radius:6px;text-align:center">✓ ABGESCHLOSSEN</div>
+      </div>
+      <div class="card fu" style="--d:.2s;border-top:6px solid var(--c);padding:36px">
+        <h3 style="font-size:36px;color:var(--w);margin-bottom:8px">Phase 1</h3><div style="font-family:'DM Mono';font-size:16px;color:var(--c);margin-bottom:24px;letter-spacing:3px">AUFBAUPHASE</div>
+        <div class="bl"><div class="bi">Drohnen beschaffen</div><div class="bi">Immobilien/Lade-Hubs mieten</div><div class="bi">IT Infrastruktur & Team</div></div>
+        <div style="margin-top:auto;color:var(--c);font-family:'DM Mono';font-size:14px;background:rgba(0,212,240,0.1);padding:10px 16px;border-radius:6px;text-align:center">✓ ABGESCHLOSSEN</div>
+      </div>
+      <div class="card fu" style="--d:.3s;border-top:6px solid var(--a);padding:36px;transform:scale(1.05);box-shadow:0 15px 40px rgba(245,166,35,0.2)">
+        <h3 style="font-size:36px;color:var(--a);margin-bottom:8px">Phase 2</h3><div style="font-family:'DM Mono';font-size:16px;color:var(--a);margin-bottom:24px;letter-spacing:3px">TESTPHASE</div>
+        <div class="bl"><div class="bi a">Sprint 6 von 8</div><div class="bi a">Testpersonen aktiv (200 User)</div><div class="bi a">Soft- & Hardware unter Realbedingungen</div></div>
+        <div style="margin-top:auto;color:var(--a);font-family:'DM Mono';font-size:14px;background:rgba(245,166,35,0.1);padding:10px 16px;border-radius:6px;text-align:center">▶ WIR SIND HIER</div>
+      </div>
+      <div class="card fu" style="--d:.4s;border-top:6px solid var(--g);padding:36px">
+        <h3 style="font-size:36px;color:var(--w);margin-bottom:8px">Phase 3</h3><div style="font-family:'DM Mono';font-size:16px;color:var(--g);margin-bottom:24px;letter-spacing:3px">REALISIERUNG</div>
+        <div class="bl"><div class="bi">Systemoptimierung nach Tests</div><div class="bi">Launching am 15. Juni 2026</div></div>
+        <div style="margin-top:auto;color:var(--g);font-family:'DM Mono';font-size:14px;background:rgba(0,232,122,0.1);padding:10px 16px;border-radius:6px;text-align:center">○ GEPLANT</div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="slide" id="s13">
+  <div class="sc"><div class="sh"><div class="tag fu">Risikomanagement (EMV-Analyse)</div><div class="title fu">16 Risiken. Alle adressiert.</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center"><div class="g4">
+      <div class="card fu" style="--d:.1s; padding:20px;">
+        <h3 style="color:var(--r); font-size: 20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:14px;">1. Externe</h3>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--r)">E1</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Sturm/Wetter</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Notfall-Lande-Protokoll</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--r)">E2</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Cyberangriffe</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Pen-Tests Q2</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--r)">E3</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">EASA Verzögerung</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Parallelantrag Anwalt</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--r)">E4</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">5G Netzwerkausfall</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Lokales Mesh-Backup</div></div></div>
+      </div>
+      <div class="card fu" style="--d:.2s; padding:20px;">
+        <h3 style="color:var(--c); font-size: 20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:14px;">2. Interne (A)</h3>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--c)">I1</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">SPOF Lisa Meyer</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Neueinstellung KW18</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--c)">I2</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">HW-Defekt (Rotor)</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ 5% Reserve-Flotte</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--c)">I3</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Wissens-Silo L.B.</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Doku-Pflicht KW16</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--c)">I4</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Akku-Degradation</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Leasing statt Kauf</div></div></div>
+      </div>
+      <div class="card fu" style="--d:.3s; padding:20px;">
+        <h3 style="color:var(--mu); font-size: 20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:14px;">3. Interne (B)</h3>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--mu)">I5</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Software-Bug Routing</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Sandboxed Testing</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--mu)">K3</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Chip-Mangel (IoT)</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Vorrat bis Q4 gesichert</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--mu)">P2</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Vandalismus (Hubs)</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Kamera & Flachdächer</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--mu)">P3</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Datenschutz-Klage</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Keine Kameradaten (UWB)</div></div></div>
+      </div>
+      <div class="card fu" style="--d:.4s; padding:20px;">
+        <h3 style="color:var(--a); font-size: 20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:14px;">4. Planerisch</h3>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--a)">K1</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Finanzen/Burn-Rate</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ 35k € Puffer</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--a)">K2</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Nachfrage-Einbruch</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Verträge mit Amazon/DM</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--a)">P1</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Akzeptanz Anwohner</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ Infoabend 22.04.</div></div></div>
+        <div class="risk-row"><div class="risk-dot" style="background:var(--a)">P4</div><div style="width:100%"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#fff;font-weight:bold">Konkurrenz-Launch</span></div><div style="font-size:11px;color:var(--g);font-family:'DM Mono';margin-top:4px">✓ 6 Monate Vorsprung</div></div></div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="slide" id="s14">
+  <div class="sc">
+    <div class="sh"><div class="tag fu">EVM (Earned Value Management)</div><div class="title fu">Kostenplanung</div><div class="rule fw" style="background:linear-gradient(90deg,var(--a) 40%,transparent);"></div></div>
+    <div class="sb fu" style="--d:.2s; justify-content:center;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px; padding:0 10px; max-width:1400px; margin: 0 auto 16px; width:100%">
+        <div>
+          <div style="font-size:16px; color:var(--mu); font-family:'DM Mono'; letter-spacing:3px">ACTUAL COST (AC)</div>
+          <div style="font-family:'Bebas Neue'; font-size:56px; color:var(--g)">293.000 € <span style="font-size:24px; color:var(--li); font-family:'DM Sans'">ausgegeben</span></div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:16px; color:var(--w); font-family:'DM Mono'; letter-spacing:3px">EARNED VALUE (EV)</div>
+          <div style="font-family:'Bebas Neue'; font-size:42px; color:var(--w)">328.000 €</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px; color:var(--a); font-family:'DM Mono'; letter-spacing:3px">PLANNED VALUE (PV)</div>
+          <div style="font-family:'Bebas Neue'; font-size:42px; color:var(--a)">305.000 € <span class="pm-badge pm-good" style="font-size:16px; transform:translateY(-8px)">CPI: 1.12</span></div>
+        </div>
+      </div>
+      <div style="position:relative; max-width:1400px; margin:0 auto 40px; width:100%; height:12px; background:rgba(255,255,255,0.05); border-radius:6px; overflow:hidden; box-shadow: inset 0 0 10px rgba(0,0,0,0.5)">
+        <div style="width:61%; height:100%; background:linear-gradient(90deg, var(--c), var(--g)); border-radius:6px; box-shadow: 0 0 15px var(--g)"></div>
+      </div>
+      <div class="card" style="padding:0; max-width:1400px; margin:0 auto; width:100%;">
+        <table class="ct">
+          <thead><tr><th>Ressource / Kategorie</th><th>Budget (Pilot)</th><th>Status / Bemerkung</th></tr></thead>
+          <tbody>
+            <tr><td>Hardware (60 Drohnen & Ersatzteile)</td><td class="mono" style="color:var(--w)"><span class="data-hl">124.000 €</span></td><td>Schwerpunkt Januar (EAC: 122.500 €)</td></tr>
+            <tr><td>Software (App, KI-System)</td><td class="mono" style="color:var(--w)"><span class="data-hl">89.000 €</span></td><td>Intensivster Monat März (EAC: 91.000 €)</td></tr>
+            <tr><td>EASA & Rechtsanwalt Dr. Sommer</td><td class="mono" style="color:var(--w)"><span class="data-hl">18.000 €</span></td><td>Risikoabsicherung / Legal Reserve</td></tr>
+            <tr><td>Depot & Infrastruktur (München-Ost)</td><td class="mono" style="color:var(--w)"><span class="data-hl">28.000 €</span></td><td>Cloud & Support: 1k / Monat</td></tr>
+            <tr><td>Contingency Reserve (Management)</td><td class="mono" style="color:var(--w)"><span class="data-hl">35.000 €</span></td><td>Sichert kalkulierten EMV von 55.200 € ab</td></tr>
+            <tr class="tot"><td>BUDGET AT COMPLETION (BAC)</td><td class="mono count" data-val="480000" data-format="currency">0 €</td><td style="color:var(--mu);font-size:14px;font-weight:normal">Forecast Estimate at Completion (EAC) = 428k €</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s15">
+  <div class="sc"><div class="sh"><div class="tag fu">Fokus & Verantwortung</div><div class="title fu">Das Team</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div class="fu" style="display:flex;justify-content:center;margin-bottom:40px;--d:.1s">
+        <div class="card cc" style="text-align:center; padding:30px 50px; border-width:2px; box-shadow:0 0 40px rgba(0,212,240,0.3)">
+          <div style="font-size:32px;font-weight:700;color:var(--w)">Dr. Markus Bauer</div>
+          <div class="mono" style="color:var(--c);font-size:16px;margin-top:10px;letter-spacing:3px">PROJEKTLEITER</div>
+          <div style="margin-top:16px;background:rgba(255,255,255,0.05);padding:8px 16px;border-radius:20px;font-size:14px;color:var(--li);display:inline-block; border: 1px solid rgba(0,212,240,0.3)">82% Kapazitätsauslastung</div>
+        </div>
+      </div>
+      <div class="fu" style="height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);width:80%;margin:0 auto 40px;--d:.2s;opacity:0.4"></div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:20px">
+        <div class="card cr fu" style="--d:.3s;padding:24px 16px;text-align:center;display:flex;flex-direction:column;justify-content:space-between">
+          <div><div style="font-weight:700;font-size:20px">Lisa Meyer</div><div class="mono" style="font-size:13px;color:var(--mu);margin:10px 0;text-transform:uppercase">Drohnentechnik</div></div>
+          <div style="color:var(--r);font-size:14px;font-weight:bold;background:rgba(255,68,102,0.15);padding:8px;border-radius:6px; border: 1px solid rgba(255,68,102,0.3)">95% (SPOF Kritisch)</div>
+        </div>
+        <div class="card fu" style="--d:.4s;padding:24px 16px;text-align:center;display:flex;flex-direction:column;justify-content:space-between;border-top-color:var(--mu)">
+          <div><div style="font-weight:700;font-size:20px">Tom Krause</div><div class="mono" style="font-size:13px;color:var(--mu);margin:10px 0;text-transform:uppercase">Backend / AWS</div></div>
+          <div style="color:var(--li);font-size:14px;background:rgba(255,255,255,0.05);padding:8px;border-radius:6px">88% Auslastung</div>
+        </div>
+        <div class="card cg fu" style="--d:.5s;padding:24px 16px;text-align:center;display:flex;flex-direction:column;justify-content:space-between">
+          <div><div style="font-weight:700;font-size:20px">Lukas Berger</div><div class="mono" style="font-size:13px;color:var(--mu);margin:10px 0;text-transform:uppercase">Firmware C++</div></div>
+          <div style="color:var(--li);font-size:14px;background:rgba(255,255,255,0.05);padding:8px;border-radius:6px">75% Auslastung</div>
+        </div>
+        <div class="card cp fu" style="--d:.6s;padding:24px 16px;text-align:center;display:flex;flex-direction:column;justify-content:space-between">
+          <div><div style="font-weight:700;font-size:20px">Jana Weber</div><div class="mono" style="font-size:13px;color:var(--mu);margin:10px 0;text-transform:uppercase">Legal & DSGVO</div></div>
+          <div style="color:var(--li);font-size:14px;background:rgba(255,255,255,0.05);padding:8px;border-radius:6px">60% Auslastung</div>
+        </div>
+        <div class="card ca fu" style="--d:.7s;padding:24px 16px;text-align:center;display:flex;flex-direction:column;justify-content:space-between">
+          <div><div style="font-weight:700;font-size:20px">Felix Schreiber</div><div class="mono" style="font-size:13px;color:var(--mu);margin:10px 0;text-transform:uppercase">Frontend & App</div></div>
+          <div style="color:var(--li);font-size:14px;background:rgba(255,255,255,0.05);padding:8px;border-radius:6px">70% Auslastung</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s16">
+  <div class="sc">
+    <div class="sh"><div class="title fu">Wirtschaftlichkeit</div><div class="rule fw" style="background:linear-gradient(90deg,var(--g) 40%,transparent);"></div></div>
+    <div class="sb" style="justify-content:center;">
+      <div class="g3" style="margin-bottom:30px; --d:.1s; width:100%; max-width:1400px; margin:0 auto 30px;">
+        <div class="card cg fu" style="text-align:center; padding:40px 20px;">
+          <div class="num-xl count" data-val="97" data-suffix="%" style="color:var(--g)">0</div>
+          <div class="mono" style="font-size:16px; color:var(--w); margin-top:20px; letter-spacing:3px">MARGE PRO LIEFERUNG</div>
+          <div style="font-size:15px; color:var(--li); margin-top:10px;"><span class="data-hl">11,62 € DB</span> bei 12,00 € Preis</div>
+        </div>
+        <div class="card ca fu" style="text-align:center; padding:40px 20px; --d:.2s;">
+          <div class="num-xl count" data-val="3873" data-format="comma" style="color:var(--a)">0</div>
+          <div class="mono" style="font-size:16px; color:var(--w); margin-top:20px; letter-spacing:3px">BREAK-EVEN (PRO TAG)</div>
+          <div style="font-size:15px; color:var(--li); margin-top:10px;">Bei <span class="data-hl">1,35 Mio €</span> Fixkosten / Monat</div>
+        </div>
+        <div class="card cc fu" style="text-align:center; padding:40px 20px; --d:.3s;">
+          <div class="num-xl count" data-val="14.5" data-suffix=" Mio" style="color:var(--c)">0</div>
+          <div class="mono" style="font-size:16px; color:var(--w); margin-top:20px; letter-spacing:3px">GEWINN PRO MONAT</div>
+          <div style="font-size:15px; color:var(--li); margin-top:10px;">Im Vollbetrieb 2028 <span class="data-hl">(50.000/Tag)</span></div>
+        </div>
+      </div>
+      <div class="card fu" style="--d:.4s; max-width:1400px; margin:0 auto; width:100%; background:rgba(0,0,0,0.6); border-color: var(--g); padding:40px;">
+        <h3 style="color:var(--w); font-size:32px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; display: flex; justify-content: space-between; align-items:center;">
+          <span>ROI & Unit Economics</span>
+          <span class="mono" style="font-size:16px; color:var(--g); background:rgba(0,232,122,0.1); padding:8px 16px; border-radius:8px;">PAYBACK PERIOD: 8 MONTHS</span>
+        </h3>
+        <p style="font-size:20px; line-height: 1.6; color:var(--li);">
+          Unser kumulativer ROI steigt ab Go-Live kontinuierlich. Mit Customer Acquisition Costs (CAC) von nur <strong style="color:var(--w)">2,10 €</strong> und einem Customer Lifetime Value (CLTV) von konservativ geschätzten <strong style="color:var(--w)">185,00 €</strong> ist die Skalierung hochprofitabel.<br><br>
+          Die gesamte Startinvestition von 480.000 Euro ist nach exakt <strong style="color:var(--g); font-size: 24px;">8 Monaten</strong> vollständig zurückgeflossen. "Das ist keine Prognose, das ist Mathematik."
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s17">
+  <div class="sc"><div class="sh"><div class="title fu">Das Fazit</div><div class="rule fw"></div></div>
+    <div class="sb" style="justify-content:center"><div class="g3" style="margin-bottom:30px">
+      <div class="card cc fu" style="--d:.1s; padding:40px">
+        <h3 style="font-size:42px">Liefervorteil</h3>
+        <div style="display:flex;align-items:baseline;gap:12px"><div class="num-xl count" data-val="4" data-suffix="×" style="color:var(--c)">0</div><div style="font-size:28px;color:var(--li)">Schneller</div></div>
+        <div class="bl" style="margin-top:24px"><div class="bi c">-76% Zeit (8,2 Min)</div><div class="bi c">-97% CO2 Ausstoß</div><div class="bi c">0,38 € Variable Kosten</div></div>
+      </div>
+      <div class="card ca fu" style="--d:.2s; padding:40px">
+        <h3 style="font-size:42px">Beacon-Tech</h3>
+        <div style="display:flex;align-items:baseline;gap:12px"><div class="num-xl count" data-val="30" data-suffix="cm" style="color:var(--a)">0</div><div style="font-size:28px;color:var(--li)">Präzision</div></div>
+        <div class="bl" style="margin-top:24px"><div class="bi a">Nur 20€ pro Kunde</div><div class="bi a">UWB (Ultra Wideband)</div><div class="bi a">Balkon-genaue Drops</div></div>
+      </div>
+      <div class="card cg fu" style="--d:.3s; padding:40px">
+        <h3 style="font-size:42px">Go-Live</h3>
+        <div style="display:flex;align-items:baseline;gap:12px"><div class="num-xl" style="color:var(--g)">15. Jun</div><div style="font-size:28px;color:var(--li)">2026</div></div>
+        <div class="bl" style="margin-top:24px"><div class="bi g">Haidhausen (5km Rad.)</div><div class="bi g">60 Drohnen Pilot</div><div class="bi g">SPI: 1.05 (On Track)</div></div>
+      </div>
+    </div>
+    <div class="card fu" style="--d:.5s; text-align:center; max-width:1000px; margin:0 auto; padding:30px;">
+      <p style="font-size:22px; color:var(--w); line-height: 1.6;">Das Projekt "München-Ost" beweist, dass urbane Logistik ohne Verkehrskollaps und Emissionen möglich ist. Die Metriken sind belastbar, die Risiken mitigiert. **Wir sind bereit für den Start.**</p>
+    </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s18">
+  <div class="sc">
+    <div class="sh"><div class="tag fu">Cashflow & Wachstum</div><div class="title fu">Break-Even Pfad</div><div class="rule fw" style="background:linear-gradient(90deg,var(--a) 40%,transparent);"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div class="g2" style="max-width:1400px; margin:0 auto;">
+        <div style="display:flex; flex-direction:column; gap:20px;" class="fu" style="--d:.1s">
+          <div class="card cg"><div class="mono" style="font-size:14px;color:var(--mu);margin-bottom:10px;letter-spacing:2px">DECKUNGSBEITRAG PRO LIEFERUNG</div><div class="num-xl" style="color:var(--g)">11,62 €</div></div>
+          <div class="card ca"><div class="mono" style="font-size:14px;color:var(--mu);margin-bottom:20px;letter-spacing:2px">WACHSTUMSPFAD</div><div class="bl"><div class="bi"><strong>Jun 2026:</strong> <span class="data-hl">50 / Tag</span> (Pilot)</div><div class="bi"><strong>Jun 2027:</strong> <span class="data-hl">5.000 / Tag</span> (Skalierung)</div><div class="bi g"><strong>Dez 2028:</strong> <span class="data-hl">50.000 / Tag</span> (Vollbetrieb)</div></div></div>
+        </div>
+        <div class="fu" style="--d:.2s; display:flex;">
+          <div class="card" style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px;"><h3 style="color:var(--a);font-size:36px">Die Strategie</h3><p style="font-size:20px; line-height: 1.6; color:var(--li);">Bei 11,62 € Deckungsbeitrag finanzieren wir unser Wachstum organisch aus dem Cashflow.<br><br>Die Pilotphase 2026 ist unser harter Proof of Concept. 2027 skalieren wir über das gesamte Münchener Stadtgebiet und durchbrechen den Break-Even.<br><br>Ab 2028 wechseln wir in den hochprofitablen Vollbetrieb.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s19">
+  <div class="sc"><div class="sh"><div class="tag fu">Workflow</div><div class="title fu" style="color:var(--p)">System Architecture</div><div class="rule fw" style="background:var(--p)"></div></div>
+    <div class="sb" style="justify-content:center">
+      <div class="card fu" style="--d:.2s;background:#050a0f;border-color:var(--p);font-family:'DM Mono';color:var(--li);padding:50px;max-width:1200px;margin:0 auto;width:100%;box-shadow:0 0 60px rgba(167,139,250,0.2)">
+        <div style="color:var(--p);margin-bottom:30px;font-size:20px">> INIT SYSTEM ARCHITECTURE LOG...</div>
+        <div class="bl" style="gap:20px;font-size:18px">
+          <div style="display:flex;gap:24px"><span style="color:var(--c);width:140px">[UI/UX]</span><span>Vanilla HTML, CSS, JavaScript (Zero Frameworks)</span></div>
+          <div style="display:flex;gap:24px"><span style="color:var(--a);width:140px">[RENDER]</span><span>Hardware Accelerated Animations & Canvas API</span></div>
+          <div style="display:flex;gap:24px"><span style="color:var(--g);width:140px">[AUDIO]</span><span>ElevenLabs AI Voice Engine / Edge TTS</span></div>
+          <div style="display:flex;gap:24px"><span style="color:var(--r);width:140px">[DEV_OPS]</span><span>ChatGPT 5.3, Gemini 3 & Claude Opus 4.6</span></div>
+        </div>
+        <div style="margin-top:50px;border-top:1px solid rgba(167,139,250,0.3);padding-top:24px;color:var(--w);font-size:20px;font-style:italic">"Wir haben nicht das Denken delegiert, wir haben die Umsetzung revolutioniert."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="s20">
+  <div class="bg"><div style="position:absolute; width:700px;height:700px;border-radius:50%;filter:blur(120px);pointer-events:none;mix-blend-mode:screen;background:var(--r);top:50%;left:50%;transform:translate(-50%,-50%);opacity:.2"></div></div>
+  <div class="sc" style="justify-content:center; align-items:center; z-index:2;">
+    <div class="fu" style="font-family:'Bebas Neue',sans-serif; font-size:100px; color:var(--r); letter-spacing:10px; --d:.1s; text-shadow:0 0 40px rgba(255,68,102,0.6)">SYSTEM SHUTDOWN</div>
+    <div style="display:flex; flex-direction:column; gap:30px; max-width:1100px; margin-top:60px; width:100%;">
+      <div class="fu" style="--d:.8s; background:rgba(0,0,0,0.6); padding:30px; border-radius:12px; border-left:6px solid var(--c)">
+        <blockquote style="font-size:24px; color:var(--w); font-weight:300; line-height:1.5;">„KI wird den Menschen nicht ersetzen, aber der Mensch, der KI nutzt, wird den Menschen ersetzen, der sie nicht nutzt.“</blockquote>
+        <div class="mono" style="color:var(--c); font-size:16px; margin-top:16px; letter-spacing:2px">KARIM LAKHANI — Harvard Business School</div>
+      </div>
+      <div class="fu" style="--d:2.5s; background:rgba(0,0,0,0.6); padding:30px; border-radius:12px; border-left:6px solid var(--a)">
+        <blockquote style="font-size:24px; color:var(--w); font-weight:300; line-height:1.5;">„Wir bewegen uns von einer Welt, in der wir programmieren lernen mussten, hin zu einer Welt, in der wir lernen müssen, die richtigen Fragen zu stellen.“</blockquote>
+        <div class="mono" style="color:var(--a); font-size:16px; margin-top:16px; letter-spacing:2px">JENSEN HUANG — CEO Nvidia</div>
+      </div>
+      <div class="fu" style="--d:4s; background:rgba(0,0,0,0.6); padding:30px; border-radius:12px; border-left:6px solid var(--g)">
+        <blockquote style="font-size:24px; color:var(--w); font-weight:300; line-height:1.5;">„Künstliche Intelligenz ist das Exoskelett für den menschlichen Geist.“</blockquote>
+        <div class="mono" style="color:var(--g); font-size:16px; margin-top:16px; letter-spacing:2px">GARRY KASPAROV — Schachgroßmeister</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="nav">
+  <button class="nb" id="sbtn" title="Sprachausgabe an/aus">🔊</button>
+  <button class="nb" id="bp" disabled>←</button>
+  <div class="ndots" id="dots"></div>
+  <div class="ninfo" id="info">1 / 21</div>
+  <button class="nb" id="bn">→</button>
+</div>
+
+<script>
+// ══ GLOBALE VARIABLEN ══
+let cur = 0;
+const TOTAL = 21;
+let speechActive = true;
+let currentAudio = null;
+
+const ttsLabel = document.getElementById('tts-label');
+
+// ══ AUDIO ENGINE (PURE MP3) ══
+function stopSpeech() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
+}
+
+async function speak(id) {
+  if (!speechActive) return;
+  if (id === 's0') return; // Deckblatt: Synthesia-Video hat eigenen Ton
+  stopSpeech();
+  
+  currentAudio = new Audio(`audio/${id}.mp3`);
+  
+  currentAudio.play().catch(e => {
+      console.warn("Audio fehlt für: " + id);
+      if(ttsLabel) ttsLabel.innerText = 'MP3 NOT FOUND';
+  });
+  
+  currentAudio.onplay = () => { if(ttsLabel) ttsLabel.innerText = 'PLAYING'; }
+  currentAudio.onended = () => { if(ttsLabel) ttsLabel.innerText = 'READY'; }
+}
+
+function initAudio() { speak('s' + cur); }
+
+// ══ AUDIO BUTTON TOGGLE ══
+const sbtn = document.getElementById('sbtn');
+sbtn.addEventListener('click', () => {
+  speechActive = !speechActive;
+  if (!speechActive) {
+    stopSpeech();
+    sbtn.innerHTML = '🔇';
+    sbtn.style.opacity = '.45';
+    if(ttsLabel) ttsLabel.innerText = 'MUTED';
+  } else {
+    sbtn.innerHTML = '🔊';
+    sbtn.style.opacity = '1';
+    speak('s' + cur);
+  }
+});
+
+// ══ NAVIGATION ══
+function go(n) {
+  if (n < 0 || n > TOTAL - 1 || n === cur) return;
+  stopSpeech();
+  
+  // OVERRIDE GLITCH FIX FÜR S3
+  document.body.classList.remove('override-active');
+  const epiWarn = document.getElementById('epi-warn');
+  if(epiWarn) epiWarn.classList.remove('show');
+  
+  if (n === 3) {
+    setTimeout(() => { if(epiWarn) epiWarn.classList.add('show'); }, 300);
+    setTimeout(() => { if(epiWarn) epiWarn.classList.remove('show'); }, 4800);
+    setTimeout(() => { document.body.classList.add('override-active'); }, 5200);
+  }
+  
+  document.getElementById('s' + cur).classList.remove('on');
+  document.getElementById('s' + cur).classList.add('out');
+  
+  setTimeout(() => {
+    document.querySelectorAll('.slide.out').forEach(s => s.classList.remove('out'));
+  }, 600);
+  
+  cur = n;
+  document.getElementById('s' + cur).classList.add('on');
+  ui();
+  speak('s' + cur);
+  animateCounters();
+}
+
+function ui() {
+  document.getElementById('info').textContent = `${cur + 1} / ${TOTAL}`;
+  document.getElementById('bp').disabled = cur === 0;
+  document.getElementById('bn').disabled = cur === TOTAL - 1;
+  document.getElementById('pbar').style.width = `${(cur / (TOTAL - 1)) * 100}%`;
+  document.querySelectorAll('.nd').forEach((d, i) => d.className = 'nd' + (i === cur ? ' on' : ''));
+}
+
+// ══ INITIALISIERUNG NAVIGATION ══
+const dots = document.getElementById('dots');
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('button');
+  d.className = 'nd' + (i === 0 ? ' on' : '');
+  d.onclick = () => go(i);
+  dots.appendChild(d);
+}
+
+document.getElementById('bp').onclick = () => go(cur - 1);
+document.getElementById('bn').onclick = () => go(cur + 1);
+
+document.addEventListener('keydown', function(e){
+  if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); go(cur+1); }
+  if(e.key==='ArrowLeft'){ e.preventDefault(); go(cur-1); }
+});
+
+// ══ COUNTER ANIMATION ══
+function animateCounters() {
+  const slide = document.getElementById('s' + cur);
+  if(!slide) return;
+  slide.querySelectorAll('.count').forEach(counter => {
+    const target = parseFloat(counter.getAttribute('data-val'));
+    const suffix = counter.getAttribute('data-suffix') || '';
+    const format = counter.getAttribute('data-format');
+    let current = 0;
+    const step = target / 40;
+    
+    counter.innerText = '0' + suffix;
+    const timer = setInterval(() => {
+      current += step;
+      let displayValue = current;
+      
+      if(format === 'comma') displayValue = Math.floor(current).toLocaleString('de-DE');
+      else if (Number.isInteger(target)) displayValue = Math.floor(current);
+      else displayValue = current.toFixed(1).replace('.', ',');
+
+      counter.innerText = displayValue + suffix;
+      
+      if ((step > 0 && current >= target) || (step < 0 && current <= target)) {
+        if(format === 'comma') counter.innerText = target.toLocaleString('de-DE') + suffix;
+        else if (Number.isInteger(target)) counter.innerText = target + suffix;
+        else counter.innerText = target.toFixed(1).replace('.', ',') + suffix;
+        clearInterval(timer);
+      }
+    }, 30);
+  });
+}
+
+// ══ DRONE EASTER EGG LOGIK ══
+const animations = ['easter-fly-1', 'easter-fly-2', 'easter-fly-3'];
+function triggerDrone() {
+  const easterEgg = document.getElementById('easter-egg');
+  easterEgg.className = ''; 
+  void easterEgg.offsetWidth; 
+  const randAnim = animations[Math.floor(Math.random() * animations.length)];
+  easterEgg.classList.add(randAnim);
+  setTimeout(triggerDrone, Math.floor(Math.random() * 10000) + 15000);
+}
+setTimeout(triggerDrone, 5000);
+
+// ══ AMBIENT PARTICLES (Canvas) ══
+const canvas = document.getElementById('ambient-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+for(let i=0; i<40; i++) particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, vx:Math.random()-0.5, vy:Math.random()-0.5});
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "rgba(0,212,240,0.2)";
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+
+// Maus-Tracking für Glow
+document.addEventListener('mousemove', e => {
+  document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+  document.documentElement.style.setProperty('--my', e.clientY + 'px');
+});
+
+ui();
+
+// ══ AMBIENT DRONE FLEET ══
+const droneLayer = document.getElementById('drone-layer');
+const droneSVG = `<svg viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <line x1="12" y1="20" x2="32" y2="20" stroke="rgba(0,212,240,0.6)" stroke-width="1.5"/>
+  <line x1="52" y1="20" x2="32" y2="20" stroke="rgba(0,212,240,0.6)" stroke-width="1.5"/>
+  <line x1="32" y1="20" x2="32" y2="28" stroke="rgba(0,212,240,0.6)" stroke-width="1.5"/>
+  <circle cx="32" cy="20" r="5" fill="rgba(0,212,240,0.3)" stroke="rgba(0,212,240,0.8)" stroke-width="1"/>
+  <circle cx="32" cy="20" r="2" fill="rgba(0,212,240,0.9)"/>
+  <ellipse cx="10" cy="18" rx="10" ry="2" fill="rgba(0,212,240,0.25)" class="prop"/>
+  <ellipse cx="54" cy="18" rx="10" ry="2" fill="rgba(0,212,240,0.25)" class="prop"/>
+  <rect x="26" y="28" width="12" height="8" rx="2" fill="rgba(0,212,240,0.15)" stroke="rgba(0,212,240,0.4)" stroke-width="0.8"/>
+  <circle cx="32" cy="32" r="1" fill="rgba(0,232,122,0.8)"><animate attributeName="opacity" values="1;0.2;1" dur="1.5s" repeatCount="indefinite"/></circle>
+</svg>`;
+
+const droneAnims = ['droneCruise1','droneCruise2','droneCruise3'];
+const droneDurations = [22, 28, 18];
+
+function spawnAmbientDrone() {
+  const idx = Math.floor(Math.random() * droneAnims.length);
+  const d = document.createElement('div');
+  d.className = 'amb-drone';
+  const size = 40 + Math.random() * 30;
+  d.style.width = size + 'px';
+  d.style.height = (size * 0.625) + 'px';
+  d.style.animation = `${droneAnims[idx]} ${droneDurations[idx] + Math.random()*8}s linear forwards`;
+  d.style.opacity = 0.3 + Math.random() * 0.4;
+  d.innerHTML = droneSVG;
+  droneLayer.appendChild(d);
+  d.addEventListener('animationend', () => d.remove());
+  setTimeout(spawnAmbientDrone, 6000 + Math.random() * 12000);
+}
+setTimeout(spawnAmbientDrone, 2000);
+setTimeout(spawnAmbientDrone, 8000);
+
+// ══ LKW ANIMATION ══
+const cityLayer = document.getElementById('city-layer');
+const lkwSVG = `<svg viewBox="0 0 120 45" width="100" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="5" width="75" height="30" rx="3" fill="rgba(245,166,35,0.2)" stroke="rgba(245,166,35,0.4)" stroke-width="1"/>
+  <rect x="75" y="15" width="35" height="20" rx="3" fill="rgba(245,166,35,0.15)" stroke="rgba(245,166,35,0.4)" stroke-width="1"/>
+  <rect x="80" y="18" width="14" height="12" rx="2" fill="rgba(245,166,35,0.1)" stroke="rgba(245,166,35,0.3)" stroke-width="0.8"/>
+  <circle cx="20" cy="38" r="6" fill="rgba(245,166,35,0.15)" stroke="rgba(245,166,35,0.5)" stroke-width="1.2"/>
+  <circle cx="55" cy="38" r="6" fill="rgba(245,166,35,0.15)" stroke="rgba(245,166,35,0.5)" stroke-width="1.2"/>
+  <circle cx="95" cy="38" r="6" fill="rgba(245,166,35,0.15)" stroke="rgba(245,166,35,0.5)" stroke-width="1.2"/>
+  <circle cx="20" cy="38" r="2.5" fill="rgba(245,166,35,0.4)"/>
+  <circle cx="55" cy="38" r="2.5" fill="rgba(245,166,35,0.4)"/>
+  <circle cx="95" cy="38" r="2.5" fill="rgba(245,166,35,0.4)"/>
+  <rect x="108" y="28" width="4" height="6" rx="1" fill="rgba(255,68,102,0.6)"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="0.8s" repeatCount="indefinite"/></rect>
+  <rect x="0" y="18" width="2" height="4" rx="1" fill="rgba(255,255,200,0.6)"/>
+</svg>`;
+
+function spawnLKW() {
+  const d = document.createElement('div');
+  d.className = 'lkw';
+  const reverse = Math.random() > 0.5;
+  const dur = 20 + Math.random() * 15;
+  d.style.animation = `${reverse ? 'lkwDriveReverse' : 'lkwDrive'} ${dur}s linear forwards`;
+  d.style.bottom = (5 + Math.random() * 15) + 'px';
+  d.style.opacity = 0.4 + Math.random() * 0.3;
+  if (reverse) d.style.transform = 'scaleX(-1)';
+  d.innerHTML = lkwSVG;
+  cityLayer.appendChild(d);
+  d.addEventListener('animationend', () => d.remove());
+  setTimeout(spawnLKW, 8000 + Math.random() * 15000);
+}
+setTimeout(spawnLKW, 3000);
+setTimeout(spawnLKW, 11000);
+
+// ══ LIGHT STREAKS ══
+const streakLayer = document.getElementById('streak-layer');
+function spawnStreak() {
+  const s = document.createElement('div');
+  s.className = 'light-streak';
+  const colors = ['rgba(0,212,240,0.8)','rgba(0,232,122,0.6)','rgba(167,139,250,0.5)'];
+  const w = 80 + Math.random() * 200;
+  s.style.width = w + 'px';
+  s.style.top = (5 + Math.random() * 85) + '%';
+  s.style.background = `linear-gradient(90deg, transparent, ${colors[Math.floor(Math.random()*colors.length)]}, transparent)`;
+  s.style.animation = `streakFly ${2 + Math.random()*3}s linear forwards`;
+  s.style.boxShadow = `0 0 8px ${colors[Math.floor(Math.random()*colors.length)]}`;
+  streakLayer.appendChild(s);
+  s.addEventListener('animationend', () => s.remove());
+  setTimeout(spawnStreak, 3000 + Math.random() * 6000);
+}
+setTimeout(spawnStreak, 1000);
+setTimeout(spawnStreak, 4000);
+
+// ══ HEX GRID BACKGROUND ══
+const hexCanvas = document.getElementById('hexgrid');
+const hexCtx = hexCanvas.getContext('2d');
+function resizeHex() { hexCanvas.width = window.innerWidth; hexCanvas.height = window.innerHeight; drawHex(); }
+function drawHex() {
+  hexCtx.clearRect(0, 0, hexCanvas.width, hexCanvas.height);
+  hexCtx.strokeStyle = 'rgba(0,212,240,0.3)';
+  hexCtx.lineWidth = 0.5;
+  const size = 50;
+  const h = size * Math.sqrt(3);
+  for (let row = -1; row < hexCanvas.height / h + 1; row++) {
+    for (let col = -1; col < hexCanvas.width / (size * 1.5) + 1; col++) {
+      const x = col * size * 1.5;
+      const y = row * h + (col % 2 ? h / 2 : 0);
+      hexCtx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i - Math.PI / 6;
+        const px = x + size * 0.4 * Math.cos(angle);
+        const py = y + size * 0.4 * Math.sin(angle);
+        i === 0 ? hexCtx.moveTo(px, py) : hexCtx.lineTo(px, py);
+      }
+      hexCtx.closePath();
+      hexCtx.stroke();
+    }
+  }
+}
+window.addEventListener('resize', resizeHex);
+resizeHex();
+</script>
+</body>
+</html>
