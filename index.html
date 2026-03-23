@@ -1073,7 +1073,7 @@ function spawnLKW() {
   d.style.animation = `${reverse ? 'lkwDriveReverse' : 'lkwDrive'} ${dur}s linear forwards`;
   d.style.bottom = (5 + Math.random() * 15) + 'px';
   d.style.opacity = 0.4 + Math.random() * 0.3;
-  if (reverse) d.style.transform = 'scaleX(-1)';
+  if (!reverse) d.style.transform = 'scaleX(-1)';
   d.innerHTML = lkwSVG;
   cityLayer.appendChild(d);
   d.addEventListener('animationend', () => d.remove());
