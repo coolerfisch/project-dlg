@@ -901,6 +901,7 @@ body::after {
 
 <div id="nav">
   <button class="nb" id="sbtn" title="Sprachausgabe an/aus">🔊</button>
+  <button class="nb" id="pausebtn" title="Pause / Fortsetzen" style="opacity:.45">⏸</button>
   <button class="nb" id="bp" disabled>←</button>
   <div class="ndots" id="dots"></div>
   <div class="ninfo" id="info">1 / 21</div>
@@ -932,8 +933,8 @@ async function speak(id) {
       if(ttsLabel) ttsLabel.innerText = 'MP3 NOT FOUND';
   });
   
-  currentAudio.onplay = () => { if(ttsLabel) ttsLabel.innerText = 'PLAYING'; }
-  currentAudio.onended = () => { if(ttsLabel) ttsLabel.innerText = 'READY'; }
+  currentAudio.onplay = () => { if(ttsLabel) ttsLabel.innerText = 'PLAYING'; document.getElementById('pausebtn').innerHTML = '⏸'; document.getElementById('pausebtn').style.opacity = '.45'; }
+  currentAudio.onended = () => { if(ttsLabel) ttsLabel.innerText = 'READY'; document.getElementById('pausebtn').innerHTML = '⏸'; document.getElementById('pausebtn').style.opacity = '.45'; }
 }
 
 function initAudio() { speak('s' + cur); }
@@ -951,6 +952,23 @@ sbtn.addEventListener('click', () => {
     sbtn.innerHTML = '🔊';
     sbtn.style.opacity = '1';
     speak('s' + cur);
+  }
+});
+
+// ══ PAUSE BUTTON ══
+const pausebtn = document.getElementById('pausebtn');
+pausebtn.addEventListener('click', () => {
+  if (!currentAudio) return;
+  if (currentAudio.paused) {
+    currentAudio.play();
+    pausebtn.innerHTML = '⏸';
+    pausebtn.style.opacity = '.45';
+    if(ttsLabel) ttsLabel.innerText = 'PLAYING';
+  } else {
+    currentAudio.pause();
+    pausebtn.innerHTML = '▶';
+    pausebtn.style.opacity = '1';
+    if(ttsLabel) ttsLabel.innerText = 'PAUSED';
   }
 });
 
