@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Python Dev Server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["START_SERVER.py"],
+      "port": 8765
+    }
+  ]
+}
