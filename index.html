@@ -893,7 +893,7 @@ function stopSpeech() {
 
 async function speak(id) {
   if (!speechActive) return;
-  if (id === 's1') return;
+  if (id === 's0') return;
   stopSpeech();
   
   currentAudio = new Audio(`audio/${id}.mp3`);
